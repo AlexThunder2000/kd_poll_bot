@@ -1,7 +1,7 @@
 import os
 from telegram import (
     Update, InlineKeyboardMarkup, InlineKeyboardButton,
-    ReplyKeyboardRemove, WebAppInfo
+    ReplyKeyboardRemove, WebAppInfo, Message
 )
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, ContextTypes,
@@ -22,8 +22,14 @@ UKRAINIAN_WEEKDAYS = {
 }
 
 waiting_for_date = {}
+date_prompt_messages = {}
 
 async def poll(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        await update.message.delete()
+    except:
+        pass
+
     keyboard = [
         [InlineKeyboardButton("Сьогодні", callback_data="poll_today")],
         [InlineKeyboardButton("Ввести іншу дату", callback_data="poll_custom")]
@@ -35,7 +41,7 @@ async def poll(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                  web_app=WebAppInfo(url="https://calendar-picker-demo.netlify.app"))
         ])
 
-    await update.message.reply_text(
+    await update.message.chat.send_message(
         "Оберіть дату для опитування:",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
@@ -54,7 +60,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "poll_custom":
         user_id = query.from_user.id
         waiting_for_date[user_id] = query.message.chat_id
-        await query.message.chat.send_message("Введіть дату у форматі дд.мм:")
+        msg = await query.message.chat.send_message("Введіть дату у форматі дд.мм:")
+        date_prompt_messages[user_id] = msg.message_id
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -74,6 +81,14 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.delete()
     except:
         pass
+
+    prompt_msg_id = date_prompt_messages.get(user_id)
+    if prompt_msg_id:
+        try:
+            await context.bot.delete_message(chat_id=chat_id, message_id=prompt_msg_id)
+        except:
+            pass
+        del date_prompt_messages[user_id]
 
     del waiting_for_date[user_id]
     await send_both_polls(update, context, parsed_date)
