@@ -35,13 +35,6 @@ async def poll(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("Сьогодні", callback_data="poll_today")],
         [InlineKeyboardButton("Ввести іншу дату", callback_data="poll_custom")]
     ]
-
-    if update.effective_chat.type == "private":
-        keyboard.append([
-            InlineKeyboardButton("Обрати дату в календарі",
-                                 web_app=WebAppInfo(url="https://calendar-picker-demo.netlify.app"))
-        ])
-
     msg = await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Оберіть дату для опитування:",
