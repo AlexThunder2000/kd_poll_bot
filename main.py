@@ -25,26 +25,28 @@ waiting_for_date = {}
 date_prompt_messages = {}
 
 async def poll(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        if update.message:
+            await update.message.delete()
+    except:
+        pass
+
     keyboard = [
         [InlineKeyboardButton("Сьогодні", callback_data="poll_today")],
         [InlineKeyboardButton("Ввести іншу дату", callback_data="poll_custom")]
     ]
 
-    if update.message.chat.type == "private":
+    if update.effective_chat.type == "private":
         keyboard.append([
             InlineKeyboardButton("Обрати дату в календарі",
                                  web_app=WebAppInfo(url="https://calendar-picker-demo.netlify.app"))
         ])
 
-    msg = await update.message.chat.send_message(
-        "Оберіть дату для опитування:",
+    msg = await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Оберіть дату для опитування:",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-
-    try:
-        await update.message.delete()
-    except:
-        pass
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -74,8 +76,8 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parsed_date = datetime.strptime(update.message.text.strip(), "%d.%m")
         parsed_date = parsed_date.replace(year=datetime.now().year)
     except ValueError:
-        msg = await update.message.reply_text("Невірний формат дати. Введіть у форматі дд.мм, напр. 03.05")
         try:
+            msg = await update.message.reply_text("Невірний формат дати. Введіть у форматі дд.мм, напр. 03.05")
             await update.message.delete()
             await msg.delete()
         except:
