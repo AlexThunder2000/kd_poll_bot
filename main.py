@@ -26,9 +26,16 @@ waiting_for_date = {}
 async def poll(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("Сьогодні", callback_data="poll_today")],
-        [InlineKeyboardButton("Ввести іншу дату", callback_data="poll_custom")],
-        [InlineKeyboardButton("Обрати дату в календарі", web_app=WebAppInfo(url="https://calendar-picker-demo.netlify.app"))]
+        [InlineKeyboardButton("Ввести іншу дату", callback_data="poll_custom")]
     ]
+
+    # додати WebApp тільки в особистому чаті
+    if update.message.chat.type == "private":
+        keyboard.append([
+            InlineKeyboardButton("Обрати дату в календарі",
+                                 web_app=WebAppInfo(url="https://calendar-picker-demo.netlify.app"))
+        ])
+
     await update.message.reply_text(
         "Оберіть дату для опитування:",
         reply_markup=InlineKeyboardMarkup(keyboard)
