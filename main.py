@@ -37,7 +37,7 @@ async def poll(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.chat.send_poll(
         question=question,
         options=options,
-        is_anonymous=True,
+        is_anonymous=False,
         allows_multiple_answers=False
     )
 
