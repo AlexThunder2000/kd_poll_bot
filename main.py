@@ -29,7 +29,6 @@ async def poll(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("Ввести іншу дату", callback_data="poll_custom")]
     ]
 
-    # додати WebApp тільки в особистому чаті
     if update.message.chat.type == "private":
         keyboard.append([
             InlineKeyboardButton("Обрати дату в календарі",
@@ -45,18 +44,23 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
+    try:
+        await query.message.delete()
+    except:
+        pass
+
     if query.data == "poll_today":
         await send_both_polls(update, context, datetime.now())
     elif query.data == "poll_custom":
         user_id = query.from_user.id
         waiting_for_date[user_id] = query.message.chat_id
-        await query.message.reply_text("Введіть дату у форматі дд.мм:")
+        await query.message.chat.send_message("Введіть дату у форматі дд.мм:")
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.message.from_user.id
-    chat_id = waiting_for_date.get(user_id)
+    user_id = update.effective_user.id
+    chat_id = update.effective_chat.id
 
-    if not chat_id:
+    if waiting_for_date.get(user_id) != chat_id:
         return
 
     try:
@@ -65,6 +69,11 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except ValueError:
         await update.message.reply_text("Невірний формат дати. Введіть у форматі дд.мм, напр. 03.05")
         return
+
+    try:
+        await update.message.delete()
+    except:
+        pass
 
     del waiting_for_date[user_id]
     await send_both_polls(update, context, parsed_date)
